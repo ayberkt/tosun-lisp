@@ -74,26 +74,65 @@ void lval_println(lval v) {
     putchar('\n'); 
 }
 
-// Use operator string to see which operation to perform
-long eval_op(long x, char* op, long y) {
-    if (strcmp(op, "+") == 0) { return x + y; }
-    if (strcmp(op, "-") == 0) { return x - y; }
-    if (strcmp(op, "*") == 0) { return x * y; }
-    if (strcmp(op, "/") == 0) { return x / y; }
-    return 0;
+lval eval_op(lval x, char * op, lval y) {
+    // If either value is an error return it
+    if (x.type == LVAL_ERR) { return x; }
+    if (y.type == LVAL_ERR) { return y; }
+
+    // Otherwise do maths on the number values
+    if (strcmp(op, "+") == 0) { return lval_num(x.num + y.num); }
+    if (strcmp(op, "-") == 0) { return lval_num(x.num - y.num); }
+    if (strcmp(op, "*") == 0) { return lval_num(x.num * y.num); }
+    if (strcmp(op, "/") == 0) {
+        // If second operand is zero return error instead of result
+        return y.num == 0 ? lval_err(LERR_DIV_ZERO) : lval_num(x.num / y.num);
+    }
+
+    return lval_err(LERR_BAD_OP);
 }
 
-long eval(mpc_ast_t* t) {
-    // If tagged as number return it directly, otherwise expression
-    if (strstr(t->tag, "number")) { return atoi(t->contents); }
+// Use operator string to see which operation to perform
+// long eval_op(long x, char* op, long y) {
+//     if (strcmp(op, "+") == 0) { return x + y; }
+//     if (strcmp(op, "-") == 0) { return x - y; }
+//     if (strcmp(op, "*") == 0) { return x * y; }
+//     if (strcmp(op, "/") == 0) { return x / y; }
+//     return 0;
+// }
 
-    // The operator is always the second child
+// long eval(mpc_ast_t* t) {
+//     // If tagged as number return it directly, otherwise expression
+//     if (strstr(t->tag, "number")) { return atoi(t->contents); }
+
+//     // The operator is always the second child
+//     char* op = t->children[1]->contents;
+
+//     // We store the third child in `x`
+//     long x = eval(t->children[2]);
+
+//     // Iterate the remaining children, combining using our operator
+//     int i = 3;
+//     while (strstr(t->children[i]->tag, "expr")) {
+//         x = eval_op(x, op, eval(t->children[i]));
+//         i++;
+//     }
+
+//     return x;
+// }
+
+
+lval eval(mpc_ast_t* t) {
+
+    if (strstr(t->tag, "number")) {
+        // Check if there is some error in conversion
+        errno = 0;
+        long x = strtol(t->contents, NULL, 10);
+        return errno != ERANGE ? lval_num(x) : lval_err(LERR_BAD_NUM);
+    }
+
     char* op = t->children[1]->contents;
+    lval x = eval(t->children[2]);
 
-    // We store the third child in `x`
-    long x = eval(t->children[2]);
-
-    // Iterate the remaining children, combining using our operator
     int i = 3;
     while (strstr(t->children[i]->tag, "expr")) {
         x = eval_op(x, op, eval(t->children[i]));
@@ -102,7 +141,6 @@ long eval(mpc_ast_t* t) {
 
     return x;
 }
-
 int main(int argc, char** argv) {
     mpc_parser_t* Number = mpc_new("number");
     mpc_parser_t* Operator = mpc_new("operator");
@@ -127,8 +165,8 @@ int main(int argc, char** argv) {
 
         mpc_result_t r;
         if (mpc_parse("<stdin>", input, Lispy, &r)) {
-            long result = eval(r.output);
-            printf("%li\n", result);
+            lval result = eval(r.output);
+            lval_println(result);
             mpc_ast_delete(r.output);     
         } else {
             mpc_err_print(r.error);
