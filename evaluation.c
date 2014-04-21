@@ -55,20 +55,23 @@ lval lval_err(int x) {
 // Print an "lval"
 void lval_print(lval v) {
   switch(v.type) {
-      // In the case the type is a number print it, then
-      // 'break' out of the switch.
-      case LVAL_NUM: printf("%li", v.num); break;
+    // In the case the type is a number print it, then 'break'
+    // of the case
+    case LVAL_NUM: printf("%li", v.num); break;
 
-      // In the case the type is an error
-      case LVAL_ERR:
-      // Check what exact type of error it is and print it
-      if (v.err == LERR_DIV_ZERO ) { printf("Error: Division by zero!"); }
-      
-      if (v.err == LERR_BAD_OP) {
-      }
+    // In the case the type is an error
+    case LVAL_ERR:
+      if (v.err == LERR_DIV_ZERO) { printf("Error: Division by Zero!");
+      if (v.err == LERR_BAD_OP) { printf{"Error: Invalid operator!"}; }
+      if (v.err == LERR_BAD_NUM) { printf("Error: Invalid number!"); }
+    break;
+}
 
-    }
+// Print an "lval" followed by a newline
+void lval_println(lval v) { lval_print(v); putchar('\n'); }
 
+
+ 
 // Use operator string to see which operation to perform
 long eval_op(long x, char* op, long y) {
   if (strcmp(op, "+") == 0) { return x + y; }
