@@ -38,7 +38,7 @@ typedef struct lval {
 } lval;
 
 // Create enumeration of possible lval types
-enum { LVALL_ERR, LVAL_NUM, LVAL_SYM, LVAL_SEXPR };
+enum { LVAL_ERR, LVAL_NUM, LVAL_SYM, LVAL_SEXPR };
 
 // Create enumeration of possible error types
 enum { LERR_DIV_ZERO, LERR_BAD_OP, LERR_BAD_NUM };
@@ -54,7 +54,7 @@ lval* lval_num(long x) {
 // Construct a pointer to a new Error lval
 lval* lval_err(char* m) {
     lval* v = malloc(sizeof(lval));
-    v->type = LVALL_ERR;
+    v->type = LVAL_ERR;
     v->err = malloc(strlen(m) + 1);
     strcpy(v->err, m);
     return v;
