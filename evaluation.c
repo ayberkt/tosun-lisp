@@ -109,7 +109,7 @@ lval* lval_add(lval* v, lval* x) {
     return v;
 }
 
-lval* lval_pop(lval *v, int i) {
+lval* lval_pop(lval* v, int i) {
     // Find the item at "i"
     lval* x = v->cell[i];
 
@@ -125,7 +125,7 @@ lval* lval_pop(lval *v, int i) {
     return x;
 }
 
-lval* lval_take(lval * v, int i) {
+lval* lval_take(lval* v, int i) {
     lval* x = lval_pop(v, i);
     lval_del(v);
     return x;
@@ -165,7 +165,7 @@ void lval_println(lval* v) {
     putchar('\n'); 
 }
 
-lval* builtin_op(lval *a, char* op) {
+lval* builtin_op(lval* a, char* op) {
     // Ensure all arguments are numbers
     for (int i = 0; i < a->count; i++) {
         if (a->cell[i]->type != LVAL_NUM) {
@@ -194,7 +194,8 @@ lval* builtin_op(lval *a, char* op) {
         if (strcmp(op, "/") == 0) {
             if (y->num == 0) {
                 lval_del(x); lval_del(y);
-                x = lval_err("Division by Zero!"); break;
+                x = lval_err("Division by Zero!");
+                break;
             }
             x->num /= y->num; 
         }
