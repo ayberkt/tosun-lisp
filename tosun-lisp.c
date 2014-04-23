@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include "mpc.h"
 
+#define LASSERT(args, cond, err) if (!(cond)) { lval_del(args); return lval_err(err); }
+
 #ifdef _WIN32
 
 static char buffer[2048];
@@ -169,8 +171,8 @@ void lval_print(lval* v) {
 
 // Print an "lval" followed by a newline
 void lval_println(lval* v) {
-    lval_print(v); 
-    putchar('\n'); 
+    lval_print(v);
+    putchar('\n');
 }
 
 lval* builtin_op(lval* a, char* op) {
@@ -205,7 +207,7 @@ lval* builtin_op(lval* a, char* op) {
                 x = lval_err("Division by zero!");
                 break;
             }
-            x->num /= y->num; 
+            x->num /= y->num;
         }
         if (strcmp(op, "\%") == 0) {
             if (y->num == 0) {
@@ -223,6 +225,26 @@ lval* builtin_op(lval* a, char* op) {
     // Delet input expression and return result
     lval_del(a);
     return x;
+}
+
+lval* builtin_head(lval* a) {
+    LASSERT(a, (a->count == 1), "Function 'head' passed too many arguments!");
+    LASSERT(a, (a->cell[0]->type == LVAL_QEXPR), "Function 'head' passed incorrect type!");
+    LASSERT(a, (a->cell[0]->count != 0), "Function 'head' passed {}");
+
+    lval* v = lval_take(a, 0);
+    while (v->count > 1) { lval_del(lval_pop(v, 1)); }
+    return v;
+}
+
+lval* builtin_tail(lval* a) {
+    LASSERT(a, (a->count == 1), "Function 'tail' passed too many arguments!");
+    LASSERT(a, (a->cell[0]->type == LVAL_QEXPR), "Function 'tail' passed incorrect type!");
+    LASSERT(a, (a->cell[0]->count != 0), "Function 'tail' passed {}!");
+    
+    lval* v = lval_take(a, 0);
+    lval_del(lval_pop(v, 0));
+    return v;
 }
 
 lval* lval_eval(lval* v);
@@ -325,11 +347,11 @@ int main(int argc, char** argv) {
 
         mpc_result_t r;
         if (mpc_parse("<stdin>", input, Lispy, &r)) {
-            lval* x = lval_eval(lval_read(r.output));    
+            lval* x = lval_eval(lval_read(r.output));
             lval_println(x);
             lval_del(x);
 
-            mpc_ast_delete(r.output);  
+            mpc_ast_delete(r.output);
         } else {
             mpc_err_print(r.error);
             mpc_err_delete(r.error);
