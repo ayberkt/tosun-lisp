@@ -23,6 +23,9 @@ void add_history(char* unused) {}
 
 #endif
 
+// Create enumeration of possible lval types
+enum { LVAL_ERR, LVAL_NUM, LVAL_SYM, LVAL_SEXPR };
+
 // Declare new lval struct
 typedef struct lval {
     int type;
@@ -36,9 +39,6 @@ typedef struct lval {
     int count;
     struct lval** cell;
 } lval;
-
-// Create enumeration of possible lval types
-enum { LVAL_ERR, LVAL_NUM, LVAL_SYM, LVAL_SEXPR };
 
 // Create enumeration of possible error types
 // enum { LERR_DIV_ZERO, LERR_BAD_OP, LERR_BAD_NUM };
@@ -185,7 +185,7 @@ lval* builtin_op(lval* a, char* op) {
     // While there are still elements remaining
     while (a->count > 0) {
         // Pop the next element
-        lval *y = lval_pop(a, 0);
+        lval* y = lval_pop(a, 0);
 
         // Perform operation
         if (strcmp(op, "+") == 0) { x->num += y->num; }
@@ -288,14 +288,14 @@ int main(int argc, char** argv) {
     mpca_lang(MPC_LANG_DEFAULT,
         "                                                     \
         number   : /-?[0-9]+/ ;                             \
-        operator : '+' | '-' | '*' | '/' | '\%' ;           \
+        symbol: '+' | '-' | '*' | '/' ;           \
         sexpr    : '(' <expr>* ')';                         \
         expr     : <number> | <symbol> | <sexpr> ;  \
         lispy    : /^/ <expr>* /$/ ;             \
         ",
     Number, Symbol, Sexpr, Expr, Lispy);
 
-    puts("Tosun Lisp version 0.0.0.0.3");
+    puts("Tosun Lisp version 0.0.0.0.5");
     puts("Press Ctrl+c to Exit\n");
 
     while (1) {
@@ -304,7 +304,7 @@ int main(int argc, char** argv) {
 
         mpc_result_t r;
         if (mpc_parse("<stdin>", input, Lispy, &r)) {
-            lval *x = lval_eval(lval_read(r.output));    
+            lval* x = lval_eval(lval_read(r.output));    
             lval_println(x);
             lval_del(x);
 
