@@ -40,9 +40,6 @@ typedef struct lval {
     struct lval** cell;
 } lval;
 
-// Create enumeration of possible error types
-// enum { LERR_DIV_ZERO, LERR_BAD_OP, LERR_BAD_NUM };
-
 // Construct a new pointer to a new Number lval
 lval* lval_num(long x) {
     lval* v = malloc(sizeof(lval));
