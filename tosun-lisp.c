@@ -381,7 +381,7 @@ int main(int argc, char** argv) {
         "                                                       \
             number   : /-?[0-9]+/ ;                             \
             symbol   : \"list\" | \"head\" | \"tail\" |         \
-                       \"join\" | \"eval\"                      \
+                       \"join\" | \"eval\" |                    \
                       '+' | '-' | '*' | '/'| '\%';              \
             sexpr    : '(' <expr>* ')';                         \
             qexpr    : '{' <expr>* '}' ;                        \
