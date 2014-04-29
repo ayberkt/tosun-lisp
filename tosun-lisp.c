@@ -33,7 +33,7 @@ typedef struct lval lval;
 typedef struct lenv lenv;
 
 // Create enumeration of possible lval types
-enum { LVAL_ERR, LVAL_NUM, LVAL_SYM, LVAL_FUN LVAL_SEXPR, LVAL_QEXPR };
+enum { LVAL_ERR, LVAL_NUM, LVAL_SYM, LVAL_FUN, LVAL_SEXPR, LVAL_QEXPR };
 
 typedef lval*(*lbuiltin)(lenv*, lval*);
 
@@ -429,6 +429,65 @@ lval* lval_read(mpc_ast_t* t) {
     }
 
     return x;
+}
+
+struct lenv {
+    int count;
+    char** syms;
+    lval** vals;
+};
+
+lenv* lenv_new(void) {
+    lenv* e = malloc(sizeof(lenv));
+    e->count = 0;
+    e->syms = NULL;
+    e->vals = NULL;
+    return e;
+}
+
+void lenv_del(lenv *e) {
+    for (int i = 0; i < e->count; i++) {
+        free(e->syms[i]);
+        lval_del(e->vals[i]);
+    }
+    free(e->syms);
+    free(e->vals);
+    free(e);
+}
+
+lval* lenv_get(lenv *e, lval *k) {
+    // Iterate over all items in environemnt
+    for (int i = 0; i < e->count; i++) {
+        // Check if the stored string matches the symbol string
+        // If it does, return a copy of the value
+        if (strcmp(e->syms[i], k->sym) == 0) { return lval_copy(e->vals[i]); }
+    }
+    // If no symbol found return error
+    return lval_err("Unbound symbol!");
+}
+
+void lenv_put(lenv* e, lval *k, lval* v) {
+    // Iterate over all items in environment
+    // Tihs is to see if variable already exists
+    for (int i = 0; i < e->count; i++) {
+        // If variable is found delete item at that position
+        // And replace with variable supplied by the user
+        if (strcmp(e->syms[i], k->sym) == 0) {
+            lval_del(e->vals[i]);
+            e->vals[i] = lval_copy(v);
+            return;
+        }
+    }
+
+    // If no existing entry found then allocate space for new entry
+    e->count++;
+    e->vals = realloc(e->vals, sizeof(lval*) * e->count);
+    e->syms = realloc(e->syms, sizeof(char*) * e->count);
+
+    // Copy contens of lval and symbol string into new location
+    e->vals[e->count - 1] = lval_copy(v);
+    e->syms[e->count - 1] = malloc(strlen(k->sym) + 1);
+    strcpy(e->syms[e->count - 1], k->sym);
 }
 
 int main(int argc, char** argv) {
