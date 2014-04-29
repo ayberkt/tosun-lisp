@@ -25,22 +25,74 @@ void add_history(char* unused) {}
 
 #endif
 
+/* Forward Declarations */
+
+struct lval;
+struct lenv;
+typedef struct lval lval;
+typedef struct lenv lenv;
+
 // Create enumeration of possible lval types
-enum { LVAL_ERR, LVAL_NUM, LVAL_SYM, LVAL_SEXPR, LVAL_QEXPR };
+enum { LVAL_ERR, LVAL_NUM, LVAL_SYM, LVAL_FUN LVAL_SEXPR, LVAL_QEXPR };
+
+typedef lval*(*lbuiltin)(lenv*, lval*);
 
 // Declare new lval struct
-typedef struct lval {
+struct lval {
     int type;
     long num;
 
     // Error and Symbol types have some string data
     char* err;
     char* sym;
+    lbuiltin fun;
 
     // Count and Pointer lo a list of "lval*"
     int count;
     struct lval** cell;
-} lval;
+};
+
+lval* lval_fun(lbuiltin func) {
+    lval* v = malloc(sizeof(lval));
+    v->type = LVAL_FUN;
+    v->fun = func;
+    return v;
+}
+
+lval* lval_copy(lval* v) {
+    lval* x = malloc(sizeof(lval));
+    x->type = v->type;
+
+    switch(v->type) {
+        // Copy Functions and Numbers directly
+        case LVAL_FUN: x->fun = v->fun; break;
+        case LVAL_NUM: x->num = v->num; break;
+
+        // Copy Strings using malloc and strcpy
+        case LVAL_ERR: 
+            x->err = malloc(strlen(v->err) + 1); 
+            strcpy(x->err, v->err);
+            break;
+
+        case LVAL_SYM:
+            x->sym = malloc(strlen(v->sym) + 1);
+            strcpy(x->sym, v->sym);
+            break;
+
+        // Copy Lists by copying each sub-expression
+            case LVAL_SEXPR:
+            case LVAL_QEXPR:
+                x->count = v->count;
+                x->cell = malloc(sizeof(lval*) * x->count);
+
+                for (int i = 0; i < x->count; i++) {
+                    x->cell[i] = lval_copy(v->cell[i]);
+                }
+                break;
+    }
+
+    return x;
+}
 
 // Construct a new pointer to a new Number lval
 lval* lval_num(long x) {
@@ -390,8 +442,7 @@ int main(int argc, char** argv) {
     mpca_lang(MPC_LANG_DEFAULT,
         "                                                       \
             number   : /-?[0-9]+/ ;                             \
-            symbol   : \"list\" | \"head\" | \"tail\" |         \
-                       \"join\" | \"eval\" | \"len\"  |         \
+            symbol   : /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&]+/ ;       \
                       '+' | '-' | '*' | '/'| '\%';              \
             sexpr    : '(' <expr>* ')';                         \
             qexpr    : '{' <expr>* '}' ;                        \
